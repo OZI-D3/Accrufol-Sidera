@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#080808">
+<title>Pharmedic Poster Creator</title>
+<style>
+  :root{
+    --bg:#070707;
+    --panel:#111;
+    --panel2:#171717;
+    --line:#2d2d2d;
+    --red:#ff1717;
+    --red2:#b90000;
+    --gold:#dca83e;
+    --text:#f5f5f5;
+    --muted:#9d9d9d;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Arial,Helvetica,sans-serif}
+  body{min-height:100vh}
+  .app{
+    min-height:100vh;
+    display:grid;
+    grid-template-columns:330px minmax(0,1fr);
+    gap:0;
+  }
+  .controls{
+    background:linear-gradient(180deg,#141414,#090909);
+    border-right:1px solid #262626;
+    padding:24px 20px;
+    overflow:auto;
+    position:relative;
+    z-index:5;
+  }
+  .brand{
+    font-size:22px;
+    font-weight:800;
+    letter-spacing:.5px;
+    margin-bottom:4px;
+  }
+  .brand span{color:var(--red)}
+  .subtitle{
+    color:#888;
+    font-size:11px;
+    letter-spacing:1.8px;
+    text-transform:uppercase;
+    margin-bottom:24px;
+  }
+  .section{margin-top:20px}
+  .section-title{
+    color:#ddd;
+    font-size:12px;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    font-weight:700;
+    margin:0 0 10px;
+  }
+  .upload{
+    width:100%;
+    min-height:46px;
+    border:1px solid #3a3a3a;
+    background:#1b1b1b;
+    color:#fff;
+    border-radius:8px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    font-weight:700;
+    font-size:13px;
+    transition:.15s;
+  }
+  .upload:hover{border-color:var(--red);background:#202020}
+  #photoInput{display:none}
+  .grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+  }
+  button{
+    appearance:none;
+    border:1px solid #343434;
+    background:#1a1a1a;
+    color:#eee;
+    min-height:42px;
+    border-radius:7px;
+    font-weight:700;
+    font-size:12px;
+    cursor:pointer;
+    transition:background .15s,border-color .15s,transform .08s;
+    touch-action:manipulation;
+  }
+  button:hover{background:#242424;border-color:#555}
+  button:active{transform:translateY(1px)}
+  .primary{
+    width:100%;
+    min-height:50px;
+    margin-top:12px;
+    border-color:var(--red);
+    background:linear-gradient(180deg,#ff2525,#bd0000);
+    font-size:13px;
+    letter-spacing:.7px;
+  }
+  .primary:hover{background:linear-gradient(180deg,#ff3434,#d00000);border-color:#ff4b4b}
+  .name-input{
+    width:100%;
+    height:45px;
+    border:1px solid #393939;
+    border-radius:7px;
+    background:#0c0c0c;
+    color:#fff;
+    padding:0 12px;
+    outline:none;
+    font-size:14px;
+  }
+  .name-input:focus{border-color:var(--gold);box-shadow:0 0 0 2px rgba(220,168,62,.12)}
+  .hint{
+    color:#777;
+    font-size:10px;
+    line-height:1.45;
+    margin-top:7px;
+  }
+  .status{
+    margin-top:18px;
+    border-top:1px solid #242424;
+    padding-top:14px;
+    color:#777;
+    font-size:10px;
+    line-height:1.5;
+  }
+  .preview{
+    min-width:0;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+    background:
+      radial-gradient(circle at 50% 42%,#1b1b1b 0,#0c0c0c 35%,#050505 75%);
+    overflow:hidden;
+  }
+  .canvas-wrap{
+    width:min(88vh, calc(100vw - 390px), 820px);
+    max-width:100%;
+    position:relative;
+    box-shadow:0 20px 70px rgba(0,0,0,.7),0 0 45px rgba(255,0,0,.08);
+    user-select:none;
+    -webkit-user-select:none;
+  }
+  canvas{
+    width:100%;
+    height:auto;
+    display:block;
+    background:#000;
+    touch-action:none;
+    cursor:grab;
+  }
+  canvas.dragging{cursor:grabbing}
+  .empty-note{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    pointer-events:none;
+    color:#777;
+    font-size:12px;
+    text-align:center;
+    padding:20px;
+  }
+  .empty-note.hidden{display:none}
+  @media (max-width:760px){
+    .app{grid-template-columns:1fr;display:flex;flex-direction:column}
+    .controls{
+      order:2;
+      border-right:0;
+      border-top:1px solid #252525;
+      padding:16px;
+    }
+    .preview{
+      order:1;
+      min-height:auto;
+      padding:14px;
+      align-items:flex-start;
+    }
+    .canvas-wrap{width:min(94vw,700px)}
+    .brand{font-size:19px}
+    .subtitle{margin-bottom:14px}
+    .section{margin-top:14px}
+  }
+  @media (min-width:761px) and (max-height:760px){
+    .preview{padding:12px}
+    .canvas-wrap{width:min(86vh,calc(100vw - 370px))}
+    .controls{padding:16px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="controls">
+    <div class="brand">PHARMEDIC <span>POSTER</span></div>
+    <div class="subtitle">Truth in Medicine · Poster Creator</div>
+
+    <div class="section">
+      <div class="section-title">1 · Upload Photo</div>
+      <label class="upload" for="photoInput">CHOOSE PHOTO</label>
+      <input id="photoInput" type="file" accept="image/jpeg,image/png,.jpg,.jpeg">
+      <div class="hint">JPG, JPEG or PNG. After upload, drag the photo directly on the poster.</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">2 · Photo Controls</div>
+      <div class="grid">
+        <button id="zoomIn">Zoom In</button>
+        <button id="zoomOut">Zoom Out</button>
+        <button id="rotateLeft">Rotate Left</button>
+        <button id="rotateRight">Rotate Right</button>
+        <button id="fit">Fit to Frame</button>
+        <button id="reset">Reset</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">3 · Name</div>
+      <input id="nameInput" class="name-input" type="text" value="Nisar Ahmad" maxlength="60" autocomplete="off" spellcheck="false" aria-label="Name">
+      <div class="hint">One name only. It is automatically scaled to fit the name plate.</div>
+    </div>
+
+    <div class="section">
+      <button id="download" class="primary">DOWNLOAD POSTER · HIGH QUALITY PNG</button>
+    </div>
+
+    <div class="status">
+      <div>Photo frame: circular · optimized for touch and mouse</div>
+      <div>Output: 2× high-resolution PNG</div>
+      <div>Works offline on GitHub Pages.</div>
+    </div>
+  </aside>
+
+  <main class="preview">
+    <div class="canvas-wrap">
+      <canvas id="posterCanvas" width="1254" height="1254" aria-label="Poster preview"></canvas>
+      <div id="emptyNote" class="empty-note">Upload a photo to place it inside the circular frame.</div>
+    </div>
+  </main>
+</div>
+
+<!-- The poster is intentionally loaded as a separate repository file. -->
+<img id="posterImage" src="poster.png" alt="" style="display:none">
+
+<script>
+(() => {
+  "use strict";
+
+  const canvas = document.getElementById("posterCanvas");
+  const ctx = canvas.getContext("2d", { alpha:false });
+  const posterImage = document.getElementById("posterImage");
+  const input = document.getElementById("photoInput");
+  const nameInput = document.getElementById("nameInput");
+  const emptyNote = document.getElementById("emptyNote");
+
+  // Coordinates are based on the supplied 1254 × 1254 poster.
+  // The photo is clipped slightly inside the gold ring so the original
+  // gold/red circular frame remains completely visible.
+  const FRAME = {
+    cx: 919,
+    cy: 292,
+    r: 204
+  };
+
+  const NAME_PLATE = {
+    left: 282,
+    top: 1008,
+    right: 976,
+    bottom: 1101
+  };
+
+  const state = {
+    photo: null,
+    objectUrl: null,
+    x: FRAME.cx,
+    y: FRAME.cy,
+    scale: 1,
+    rotation: 0,
+    baseScale: 1,
+    dragging: false,
+    pointerId: null,
+    lastX: 0,
+    lastY: 0
+  };
+
+  // Offscreen canvas used to preserve the red bird artwork that overlaps
+  // the circular photo area. Only strongly red pixels are restored.
+  const fgCanvas = document.createElement("canvas");
+  const fgCtx = fgCanvas.getContext("2d");
+  fgCanvas.width = 1254;
+  fgCanvas.height = 1254;
+
+  function clamp(v, min, max) {
+    return Math.max(min, Math.min(max, v));
+  }
+
+  function drawPosterBase(targetCtx, width, height) {
+    targetCtx.imageSmoothingEnabled = true;
+    targetCtx.imageSmoothingQuality = "high";
+    targetCtx.drawImage(posterImage, 0, 0, width, height);
+  }
+
+  function prepareForegroundMask() {
+    if (!posterImage.complete || !posterImage.naturalWidth) return;
+    const temp = document.createElement("canvas");
+    temp.width = 1254;
+    temp.height = 1254;
+    const t = temp.getContext("2d", { willReadFrequently:true });
+    t.drawImage(posterImage,0,0,1254,1254);
+    const image = t.getImageData(0,0,1254,1254);
+    const d = image.data;
+
+    // Keep saturated red artwork inside the circular region.
+    for (let y = 70; y < 520; y++) {
+      for (let x = 650; x < 1150; x++) {
+        const dx = x - FRAME.cx, dy = y - FRAME.cy;
+        if (dx*dx + dy*dy > (FRAME.r + 7)*(FRAME.r + 7)) continue;
+        const i = (y * 1254 + x) * 4;
+        const r = d[i], g = d[i+1], b = d[i+2];
+        const redDominant = r > 75 && r > g * 1.45 && r > b * 1.45;
+        const saturated = (r - Math.min(g,b)) > 38;
+        if (!(redDominant && saturated)) d[i+3] = 0;
+      }
+    }
+    fgCtx.clearRect(0,0,1254,1254);
+    fgCtx.putImageData(image,0,0);
+  }
+
+  function drawPhoto(targetCtx, W=1254, H=1254) {
+    if (!state.photo) return;
+
+    const sx = W / 1254;
+    const sy = H / 1254;
+    const cx = FRAME.cx * sx;
+    const cy = FRAME.cy * sy;
+    const radius = FRAME.r * Math.min(sx, sy);
+
+    targetCtx.save();
+    targetCtx.beginPath();
+    targetCtx.arc(cx, cy, radius, 0, Math.PI*2);
+    targetCtx.clip();
+
+    targetCtx.translate(state.x * sx, state.y * sy);
+    targetCtx.rotate(state.rotation);
+    targetCtx.scale(state.scale * sx, state.scale * sy);
+
+    const pw = state.photo.naturalWidth || state.photo.width;
+    const ph = state.photo.naturalHeight || state.photo.height;
+    targetCtx.imageSmoothingEnabled = true;
+    targetCtx.imageSmoothingQuality = "high";
+    targetCtx.drawImage(state.photo, -pw/2, -ph/2, pw, ph);
+    targetCtx.restore();
+  }
+
+  function drawName(targetCtx, W=1254, H=1254) {
+    const name = nameInput.value.trim();
+    if (!name) return;
+
+    const s = W / 1254;
+    const left = NAME_PLATE.left * s;
+    const right = NAME_PLATE.right * s;
+    const top = NAME_PLATE.top * s;
+    const bottom = NAME_PLATE.bottom * s;
+    const boxW = right-left;
+    const boxH = bottom-top;
+
+    targetCtx.save();
+    targetCtx.textAlign = "center";
+    targetCtx.textBaseline = "middle";
+    targetCtx.font = `700 ${Math.round(58*s)}px Arial, Helvetica, sans-serif`;
+
+    let size = 58 * s;
+    const maxWidth = boxW * .82;
+    while (targetCtx.measureText(name).width > maxWidth && size > 18*s) {
+      size -= 1*s;
+      targetCtx.font = `700 ${Math.round(size)}px Arial, Helvetica, sans-serif`;
+    }
+
+    // Subtle dark halo keeps the name legible against the textured plate.
+    targetCtx.lineWidth = Math.max(2, 5*s);
+    targetCtx.strokeStyle = "rgba(0,0,0,.9)";
+    targetCtx.strokeText(name, (left+right)/2, (top+bottom)/2 + 1*s);
+    targetCtx.fillStyle = "#f4f4f4";
+    targetCtx.fillText(name, (left+right)/2, (top+bottom)/2 + 1*s);
+    targetCtx.restore();
+  }
+
+  function render() {
+    const W = 1254, H = 1254;
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.clearRect(0,0,W,H);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+
+    drawPosterBase(ctx,W,H);
+    drawPhoto(ctx,W,H);
+
+    // Restore the bird that overlaps the upper-left of the circular frame.
+    if (state.photo) {
+      ctx.save();
+      ctx.globalCompositeOperation = "source-over";
+      ctx.drawImage(fgCanvas,0,0,W,H);
+      ctx.restore();
+    }
+
+    // Name is deliberately drawn last so it is always perfectly centered.
+    drawName(ctx,W,H);
+  }
+
+  function fitPhoto() {
+    if (!state.photo) return;
+    const pw = state.photo.naturalWidth || state.photo.width;
+    const ph = state.photo.naturalHeight || state.photo.height;
+    const diameter = FRAME.r * 2;
+    state.baseScale = Math.max(diameter / pw, diameter / ph);
+    state.scale = state.baseScale;
+    state.x = FRAME.cx;
+    state.y = FRAME.cy;
+    state.rotation = 0;
+    render();
+  }
+
+  function resetPhoto() {
+    if (!state.photo) return;
+    fitPhoto();
+  }
+
+  function zoom(factor) {
+    if (!state.photo) return;
+    state.scale = clamp(state.scale * factor, state.baseScale * 0.35, state.baseScale * 8);
+    render();
+  }
+
+  function rotate(deg) {
+    if (!state.photo) return;
+    state.rotation += deg * Math.PI / 180;
+    render();
+  }
+
+  function getCanvasPoint(e) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (e.clientX - rect.left) * (1254 / rect.width),
+      y: (e.clientY - rect.top) * (1254 / rect.height)
+    };
+  }
+
+  canvas.addEventListener("pointerdown", e => {
+    if (!state.photo) return;
+    state.dragging = true;
+    state.pointerId = e.pointerId;
+    state.lastX = getCanvasPoint(e).x;
+    state.lastY = getCanvasPoint(e).y;
+    canvas.classList.add("dragging");
+    canvas.setPointerCapture(e.pointerId);
+  });
+
+  canvas.addEventListener("pointermove", e => {
+    if (!state.dragging || e.pointerId !== state.pointerId) return;
+    const p = getCanvasPoint(e);
+    state.x += p.x - state.lastX;
+    state.y += p.y - state.lastY;
+    state.lastX = p.x;
+    state.lastY = p.y;
+    render();
+  });
+
+  function endDrag(e) {
+    if (e.pointerId !== state.pointerId) return;
+    state.dragging = false;
+    state.pointerId = null;
+    canvas.classList.remove("dragging");
+  }
+  canvas.addEventListener("pointerup", endDrag);
+  canvas.addEventListener("pointercancel", endDrag);
+  canvas.addEventListener("pointerleave", e => {
+    if (state.dragging && e.pointerType === "mouse") endDrag(e);
+  });
+
+  canvas.addEventListener("wheel", e => {
+    if (!state.photo) return;
+    e.preventDefault();
+    zoom(e.deltaY < 0 ? 1.08 : 0.925);
+  }, {passive:false});
+
+  input.addEventListener("change", e => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    if (!/^image\/(jpeg|png)$/.test(file.type) && !/\.(jpe?g|png)$/i.test(file.name)) {
+      alert("Please select a JPG, JPEG, or PNG image.");
+      input.value = "";
+      return;
+    }
+    if (state.objectUrl) URL.revokeObjectURL(state.objectUrl);
+    state.objectUrl = URL.createObjectURL(file);
+
+    const image = new Image();
+    image.onload = () => {
+      state.photo = image;
+      emptyNote.classList.add("hidden");
+      fitPhoto();
+    };
+    image.onerror = () => alert("The selected image could not be loaded.");
+    image.src = state.objectUrl;
+  });
+
+  nameInput.addEventListener("input", render);
+
+  document.getElementById("zoomIn").addEventListener("click", () => zoom(1.15));
+  document.getElementById("zoomOut").addEventListener("click", () => zoom(0.87));
+  document.getElementById("rotateLeft").addEventListener("click", () => rotate(-15));
+  document.getElementById("rotateRight").addEventListener("click", () => rotate(15));
+  document.getElementById("fit").addEventListener("click", fitPhoto);
+  document.getElementById("reset").addEventListener("click", resetPhoto);
+
+  document.getElementById("download").addEventListener("click", () => {
+    // 2× output provides a high-resolution result while retaining the
+    // original poster's native artwork without inventing extra detail.
+    const out = document.createElement("canvas");
+    const scale = 2;
+    out.width = 1254 * scale;
+    out.height = 1254 * scale;
+    const o = out.getContext("2d");
+    o.imageSmoothingEnabled = true;
+    o.imageSmoothingQuality = "high";
+
+    drawPosterBase(o, out.width, out.height);
+    drawPhoto(o, out.width, out.height);
+
+    if (state.photo) {
+      o.save();
+      o.drawImage(fgCanvas,0,0,out.width,out.height);
+      o.restore();
+    }
+    drawName(o,out.width,out.height);
+
+    out.toBlob(blob => {
+      if (!blob) {
+        alert("Unable to create the PNG.");
+        return;
+      }
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "pharmedic-poster.png";
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        URL.revokeObjectURL(a.href);
+        a.remove();
+      }, 1000);
+    }, "image/png");
+  });
+
+  posterImage.addEventListener("load", () => {
+    canvas.width = posterImage.naturalWidth || 1254;
+    canvas.height = posterImage.naturalHeight || 1254;
+    fgCanvas.width = 1254;
+    fgCanvas.height = 1254;
+    prepareForegroundMask();
+    render();
+  });
+
+  posterImage.addEventListener("error", () => {
+    emptyNote.textContent = "poster.png could not be loaded. Place poster.png beside index.html.";
+    emptyNote.classList.remove("hidden");
+  });
+
+  // Initial render if the browser has already completed the image load.
+  if (posterImage.complete && posterImage.naturalWidth) {
+    prepareForegroundMask();
+    render();
+  }
+})();
+</script>
+</body>
+</html>
