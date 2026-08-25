@@ -223,9 +223,10 @@
     </div>
 
     <div class="section">
-      <div class="section-title">3 · Name</div>
-      <input id="nameInput" class="name-input" type="text" value="Nisar Ahmad" maxlength="60" autocomplete="off" spellcheck="false" aria-label="Name">
-      <div class="hint">One name only. It is automatically scaled to fit the name plate.</div>
+      <div class="section-title">3 · Name & Designation</div>
+      <input id="nameInput" class="name-input" type="text" value="" maxlength="60" autocomplete="off" spellcheck="false" aria-label="Name" placeholder="Enter name">
+      <input id="designationInput" class="name-input" type="text" value="" maxlength="80" autocomplete="off" spellcheck="false" aria-label="Designation" placeholder="Enter designation" style="margin-top:8px">
+      <div class="hint">Both fields are optional. Leave them empty for a clean poster. Entered text appears automatically in the name plate.</div>
     </div>
 
     <div class="section">
@@ -259,6 +260,7 @@
   const posterImage = document.getElementById("posterImage");
   const input = document.getElementById("photoInput");
   const nameInput = document.getElementById("nameInput");
+  const designationInput = document.getElementById("designationInput");
   const emptyNote = document.getElementById("emptyNote");
 
   // Coordinates are based on the supplied 1254 × 1254 poster.
@@ -362,34 +364,37 @@
 
   function drawName(targetCtx, W=1254, H=1254) {
     const name = nameInput.value.trim();
-    if (!name) return;
-
+    const designation = designationInput.value.trim();
+    if (!name && !designation) return;
     const s = W / 1254;
-    const left = NAME_PLATE.left * s;
-    const right = NAME_PLATE.right * s;
-    const top = NAME_PLATE.top * s;
-    const bottom = NAME_PLATE.bottom * s;
-    const boxW = right-left;
-    const boxH = bottom-top;
-
-    targetCtx.save();
-    targetCtx.textAlign = "center";
-    targetCtx.textBaseline = "middle";
-    targetCtx.font = `700 ${Math.round(58*s)}px Arial, Helvetica, sans-serif`;
-
-    let size = 58 * s;
-    const maxWidth = boxW * .82;
-    while (targetCtx.measureText(name).width > maxWidth && size > 18*s) {
-      size -= 1*s;
-      targetCtx.font = `700 ${Math.round(size)}px Arial, Helvetica, sans-serif`;
+    const left = NAME_PLATE.left * s, right = NAME_PLATE.right * s;
+    const top = NAME_PLATE.top * s, bottom = NAME_PLATE.bottom * s;
+    const centerX = (left + right) / 2, centerY = (top + bottom) / 2;
+    const boxW = right - left, boxH = bottom - top, maxWidth = boxW * .82;
+    targetCtx.save(); targetCtx.textAlign = "center"; targetCtx.textBaseline = "middle";
+    targetCtx.imageSmoothingEnabled = true; targetCtx.imageSmoothingQuality = "high";
+    if (name && !designation) {
+      let size=Math.min(58*s,boxH*.60); targetCtx.font=`700 ${Math.round(size)}px Arial, Helvetica, sans-serif`;
+      while(targetCtx.measureText(name).width>maxWidth && size>18*s){size-=s;targetCtx.font=`700 ${Math.round(size)}px Arial, Helvetica, sans-serif`;}
+      targetCtx.lineWidth=Math.max(2,5*s); targetCtx.strokeStyle="rgba(0,0,0,.9)"; targetCtx.strokeText(name,centerX,centerY+s);
+      targetCtx.fillStyle="#f4f4f4"; targetCtx.fillText(name,centerX,centerY+s);
     }
-
-    // Subtle dark halo keeps the name legible against the textured plate.
-    targetCtx.lineWidth = Math.max(2, 5*s);
-    targetCtx.strokeStyle = "rgba(0,0,0,.9)";
-    targetCtx.strokeText(name, (left+right)/2, (top+bottom)/2 + 1*s);
-    targetCtx.fillStyle = "#f4f4f4";
-    targetCtx.fillText(name, (left+right)/2, (top+bottom)/2 + 1*s);
+    if (!name && designation) {
+      let size=Math.min(42*s,boxH*.48); targetCtx.font=`600 ${Math.round(size)}px Arial, Helvetica, sans-serif`;
+      while(targetCtx.measureText(designation).width>maxWidth && size>14*s){size-=s;targetCtx.font=`600 ${Math.round(size)}px Arial, Helvetica, sans-serif`;}
+      targetCtx.lineWidth=Math.max(2,4*s); targetCtx.strokeStyle="rgba(0,0,0,.9)"; targetCtx.strokeText(designation,centerX,centerY+s);
+      targetCtx.fillStyle="#d9d9d9"; targetCtx.fillText(designation,centerX,centerY+s);
+    }
+    if (name && designation) {
+      let ns=Math.min(48*s,boxH*.43), ds=Math.min(29*s,boxH*.28);
+      targetCtx.font=`700 ${Math.round(ns)}px Arial, Helvetica, sans-serif`;
+      while(targetCtx.measureText(name).width>maxWidth && ns>16*s){ns-=s;targetCtx.font=`700 ${Math.round(ns)}px Arial, Helvetica, sans-serif`;}
+      targetCtx.font=`600 ${Math.round(ds)}px Arial, Helvetica, sans-serif`;
+      while(targetCtx.measureText(designation).width>maxWidth && ds>12*s){ds-=s;targetCtx.font=`600 ${Math.round(ds)}px Arial, Helvetica, sans-serif`;}
+      const gap=5*s,total=ns+gap+ds,ny=centerY-total/2+ns/2,dy=centerY-total/2+ns+gap+ds/2;
+      targetCtx.font=`700 ${Math.round(ns)}px Arial, Helvetica, sans-serif`; targetCtx.lineWidth=Math.max(2,4*s); targetCtx.strokeStyle="rgba(0,0,0,.9)"; targetCtx.strokeText(name,centerX,ny); targetCtx.fillStyle="#f4f4f4"; targetCtx.fillText(name,centerX,ny);
+      targetCtx.font=`600 ${Math.round(ds)}px Arial, Helvetica, sans-serif`; targetCtx.lineWidth=Math.max(1.5,3*s); targetCtx.strokeStyle="rgba(0,0,0,.9)"; targetCtx.strokeText(designation,centerX,dy); targetCtx.fillStyle="#d9d9d9"; targetCtx.fillText(designation,centerX,dy);
+    }
     targetCtx.restore();
   }
 
@@ -513,6 +518,7 @@
   });
 
   nameInput.addEventListener("input", render);
+  designationInput.addEventListener("input", render);
 
   document.getElementById("zoomIn").addEventListener("click", () => zoom(1.15));
   document.getElementById("zoomOut").addEventListener("click", () => zoom(0.87));
